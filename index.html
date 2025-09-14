@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Management System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            @apply px-4 py-2 font-semibold text-white rounded-lg transition-colors duration-200;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <!-- Main Application Container -->
+    <div id="app" class="container">
+
+        <!-- Loading Screen -->
+        <div id="loading" class="flex flex-col items-center justify-center hidden">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+            <p class="mt-4 text-gray-600">Loading data...</p>
+        </div>
+
+        <!-- Login and Sign-up Page -->
+        <div id="auth-page" class="card">
+            <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">Welcome</h1>
+            <div id="login-form-container" class="space-y-4">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Login</h2>
+                <input type="text" id="login-username" placeholder="Username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="login-password" placeholder="Password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="login-role" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="student">Student</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button onclick="login()" class="btn w-full bg-blue-600 hover:bg-blue-700">Login</button>
+                <p class="text-center text-gray-600">Don't have an account? <a href="#" onclick="showSignup()" class="text-blue-600 hover:underline">Sign up here</a></p>
+            </div>
+            <div id="signup-form-container" class="space-y-4 hidden">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Sign Up</h2>
+                <input type="text" id="signup-username" placeholder="Username" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="password" id="signup-password" placeholder="Password" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <select id="signup-role" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="student">Student</option>
+                    <option value="faculty">Faculty</option>
+                    <option value="admin">Admin</option>
+                </select>
+                <button onclick="signup()" class="btn w-full bg-green-600 hover:bg-green-700">Sign Up</button>
+                <p class="text-center text-gray-600">Already have an account? <a href="#" onclick="showLogin()" class="text-blue-600 hover:underline">Login here</a></p>
+            </div>
+            <p id="message" class="mt-4 text-center font-medium"></p>
+        </div>
+
+        <!-- Dashboard Pages -->
+        <div id="dashboard" class="card hidden">
+            <header class="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                <h1 id="dashboard-title" class="text-3xl font-bold text-gray-800"></h1>
+                <div class="flex flex-col items-end space-y-1">
+                    <div class="flex items-center space-x-4">
+                        <p class="text-sm text-gray-500">Logged in as: <span id="current-user-role" class="font-semibold text-gray-700 capitalize"></span></p>
+                        <button onclick="logout()" class="btn bg-red-500 hover:bg-red-600">Logout</button>
+                    </div>
+                    <p class="text-xs text-gray-400">User ID: <span id="current-user-id" class="font-mono text-gray-600"></span></p>
+                </div>
+            </header>
+
+            <!-- Student Dashboard -->
+            <div id="student-dashboard" class="hidden">
+                <h2 class="text-2xl font-semibold mb-4">My Courses</h2>
+                <div id="student-courses-list" class="space-y-4 mb-8"></div>
+                <h2 class="text-2xl font-semibold mb-4">Enroll in a New Course</h2>
+                <div id="available-courses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <!-- Faculty Dashboard -->
+            <div id="faculty-dashboard" class="hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Add Course Form -->
+                    <div class="card bg-gray-50 p-6">
+                        <h2 class="text-2xl font-semibold mb-4">Add New Course</h2>
+                        <div class="space-y-4">
+                            <input type="text" id="course-name" placeholder="Course Name" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input type="text" id="course-code" placeholder="Course Code" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="addCourse()" class="btn bg-blue-600 hover:bg-blue-700 w-full">Add Course</button>
+                        </div>
+                    </div>
+                    <!-- My Courses List for Faculty -->
+                    <div class="card bg-gray-50 p-6">
+                        <h2 class="text-2xl font-semibold mb-4">My Courses</h2>
+                        <div id="faculty-courses-list" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Dashboard -->
+            <div id="admin-dashboard" class="hidden">
+                <h2 class="text-2xl font-semibold mb-4">All System Data</h2>
+                <div id="admin-data-view" class="space-y-8">
+                    <!-- Students Section -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2">Students</h3>
+                        <div id="admin-students-list" class="space-y-2"></div>
+                    </div>
+                    <!-- Faculty Section -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2">Faculty</h3>
+                        <div id="admin-faculty-list" class="space-y-2"></div>
+                    </div>
+                    <!-- Courses Section -->
+                    <div>
+                        <h3 class="text-xl font-semibold mb-2">Courses</h3>
+                        <div id="admin-courses-list" class="space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="card w-96 p-6 space-y-4 text-center">
+            <h3 id="modal-title" class="text-xl font-semibold"></h3>
+            <p id="modal-message"></p>
+            <div class="flex justify-center space-x-4">
+                <button id="modal-confirm-btn" class="btn bg-red-600 hover:bg-red-700">Confirm</button>
+                <button id="modal-cancel-btn" class="btn bg-gray-400 hover:bg-gray-500">Cancel</button>
+            </div>
+        </div>
+    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    setLogLevel('Debug');
+
+    const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    let app, auth, db, userId;
+    let currentUser = null;
+    const data = {
+        users: [],
+        courses: [],
+        enrollments: [],
+        attendance: []
+    };
+
+    // UI elements
+    const loadingEl = document.getElementById('loading');
+    const authPage = document.getElementById('auth-page');
+    const loginFormContainer = document.getElementById('login-form-container');
+    const signupFormContainer = document.getElementById('signup-form-container');
+    const dashboard = document.getElementById('dashboard');
+    const messageEl = document.getElementById('message');
+    const studentDashboard = document.getElementById('student-dashboard');
+    const facultyDashboard = document.getElementById('faculty-dashboard');
+    const adminDashboard = document.getElementById('admin-dashboard');
+
+    // Utility functions
+    function showModal(title, message, onConfirm) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-message').innerHTML = message;
+        document.getElementById('confirmation-modal').classList.remove('hidden');
+
+        const confirmBtn = document.getElementById('modal-confirm-btn');
+        const cancelBtn = document.getElementById('modal-cancel-btn');
+        const handleConfirm = () => {
+            onConfirm();
+            document.getElementById('confirmation-modal').classList.add('hidden');
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+        };
+        const handleCancel = () => {
+            document.getElementById('confirmation-modal').classList.add('hidden');
+            confirmBtn.removeEventListener('click', handleConfirm);
+            cancelBtn.removeEventListener('click', handleCancel);
+        };
+        confirmBtn.addEventListener('click', handleConfirm);
+        cancelBtn.addEventListener('click', handleCancel);
+    }
+
+    // Auth functions
+    function showLogin() {
+        loginFormContainer.classList.remove('hidden');
+        signupFormContainer.classList.add('hidden');
+        messageEl.textContent = '';
+    }
+
+    function showSignup() {
+        loginFormContainer.classList.add('hidden');
+        signupFormContainer.classList.remove('hidden');
+        messageEl.textContent = '';
+    }
+
+    async function login() {
+        const username = document.getElementById('login-username').value;
+        const password = document.getElementById('login-password').value;
+        const role = document.getElementById('login-role').value;
+
+        try {
+            const usersRef = collection(db, `artifacts/${appId}/public/data/users`);
+            const q = query(usersRef, where("username", "==", username), where("password", "==", password), where("role", "==", role));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                currentUser = querySnapshot.docs[0].data();
+                currentUser.docId = querySnapshot.docs[0].id; // Store Firestore doc ID
+                messageEl.textContent = 'Login successful!';
+                messageEl.classList.add('text-green-500');
+                messageEl.classList.remove('text-red-500');
+                renderDashboard();
+            } else {
+                messageEl.textContent = 'Invalid credentials.';
+                messageEl.classList.remove('text-green-500');
+                messageEl.classList.add('text-red-500');
+            }
+        } catch (e) {
+            console.error("Error logging in: ", e);
+            messageEl.textContent = 'Login failed. Please try again.';
+            messageEl.classList.remove('text-green-500');
+            messageEl.classList.add('text-red-500');
+        }
+    }
+
+    async function signup() {
+        const username = document.getElementById('signup-username').value;
+        const password = document.getElementById('signup-password').value;
+        const role = document.getElementById('signup-role').value;
+
+        if (!username || !password) {
+            messageEl.textContent = 'Please fill out all fields.';
+            messageEl.classList.remove('text-green-500');
+            messageEl.classList.add('text-red-500');
+            return;
+        }
+        
+        try {
+            const usersRef = collection(db, `artifacts/${appId}/public/data/users`);
+            const q = query(usersRef, where("username", "==", username));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                messageEl.textContent = 'Username already exists.';
+                messageEl.classList.remove('text-green-500');
+                messageEl.classList.add('text-red-500');
+            } else {
+                const newUser = {
+                    username: username,
+                    password: password,
+                    role: role,
+                    name: username,
+                    cgpa: 0.0
+                };
+                await addDoc(usersRef, newUser);
+                messageEl.textContent = 'Sign up successful! Please log in.';
+                messageEl.classList.add('text-green-500');
+                messageEl.classList.remove('text-red-500');
+                showLogin();
+            }
+        } catch (e) {
+            console.error("Error signing up: ", e);
+            messageEl.textContent = 'Sign up failed. Please try again.';
+            messageEl.classList.remove('text-green-500');
+            messageEl.classList.add('text-red-500');
+        }
+    }
+
+    function logout() {
+        currentUser = null;
+        messageEl.textContent = '';
+        renderAuthPage();
+    }
+
+    // Render functions
+    function renderAuthPage() {
+        authPage.classList.remove('hidden');
+        dashboard.classList.add('hidden');
+        loadingEl.classList.add('hidden');
+        showLogin();
+    }
+
+    function renderDashboard() {
+        authPage.classList.add('hidden');
+        dashboard.classList.remove('hidden');
+        loadingEl.classList.add('hidden');
+
+        document.getElementById('current-user-role').textContent = currentUser.role;
+        document.getElementById('current-user-id').textContent = userId;
+
+        studentDashboard.classList.add('hidden');
+        facultyDashboard.classList.add('hidden');
+        adminDashboard.classList.add('hidden');
+
+        switch (currentUser.role) {
+            case 'student':
+                renderStudentDashboard();
+                break;
+            case 'faculty':
+                renderFacultyDashboard();
+                break;
+            case 'admin':
+                renderAdminDashboard();
+                break;
+        }
+    }
+
+    function renderStudentDashboard() {
+        document.getElementById('dashboard-title').textContent = 'Student Dashboard';
+        studentDashboard.classList.remove('hidden');
+
+        // Render My Courses and Available Courses
+        const coursesListEl = document.getElementById('student-courses-list');
+        const availableCoursesEl = document.getElementById('available-courses-list');
+        coursesListEl.innerHTML = '';
+        availableCoursesEl.innerHTML = '';
+
+        const studentCourses = data.enrollments
+            .filter(e => e.studentId === currentUser.docId)
+            .map(e => data.courses.find(c => c.id === e.courseId));
+        
+        if (studentCourses.length === 0) {
+            coursesListEl.innerHTML = '<p class="text-gray-500">You are not enrolled in any courses yet.</p>';
+        } else {
+            studentCourses.forEach(course => {
+                const attendance = data.attendance.filter(a => a.studentId === currentUser.docId && a.courseId === course.id);
+                const presentCount = attendance.filter(a => a.status === 'Present').length;
+                const totalCount = attendance.length;
+                const attendancePercentage = totalCount > 0 ? (presentCount / totalCount * 100).toFixed(2) : 0;
+                
+                const courseItem = document.createElement('div');
+                courseItem.className = 'card bg-gray-50 p-4';
+                courseItem.innerHTML = `
+                    <h4 class="text-xl font-semibold">${course.name} (${course.code})</h4>
+                    <p class="text-gray-600">Attendance: <span class="font-bold text-blue-600">${attendancePercentage}%</span> (${presentCount}/${totalCount})</p>
+                    <p class="text-gray-600">CGPA: <span class="font-bold text-green-600">${currentUser.cgpa ? currentUser.cgpa.toFixed(2) : 'N/A'}</span></p>
+                `;
+                coursesListEl.appendChild(courseItem);
+            });
+        }
+
+        const availableCourses = data.courses.filter(c => !studentCourses.some(sc => sc.id === c.id));
+        if (availableCourses.length === 0) {
+            availableCoursesEl.innerHTML = '<p class="text-gray-500 col-span-3">No new courses available for enrollment.</p>';
+        } else {
+            availableCourses.forEach(course => {
+                const courseCard = document.createElement('div');
+                courseCard.className = 'card bg-gray-50 p-4';
+                courseCard.innerHTML = `
+                    <h4 class="text-xl font-semibold mb-2">${course.name} (${course.code})</h4>
+                    <button onclick="enrollCourse('${course.id}')" class="btn bg-blue-600 hover:bg-blue-700 w-full">Enroll</button>
+                `;
+                availableCoursesEl.appendChild(courseCard);
+            });
+        }
+    }
+
+    function renderFacultyDashboard() {
+        document.getElementById('dashboard-title').textContent = 'Faculty Dashboard';
+        facultyDashboard.classList.remove('hidden');
+        
+        const coursesListEl = document.getElementById('faculty-courses-list');
+        coursesListEl.innerHTML = '';
+        const facultyCourses = data.courses.filter(c => c.facultyId === currentUser.docId);
+
+        if (facultyCourses.length === 0) {
+            coursesListEl.innerHTML = '<p class="text-gray-500">You have not added any courses yet.</p>';
+        } else {
+            facultyCourses.forEach(course => {
+                const studentsInCourse = data.enrollments
+                    .filter(e => e.courseId === course.id)
+                    .map(e => data.users.find(u => u.docId === e.studentId));
+                
+                const courseItem = document.createElement('div');
+                courseItem.className = 'card bg-gray-100 p-4';
+                courseItem.innerHTML = `
+                    <h4 class="text-xl font-semibold">${course.name} (${course.code})</h4>
+                    <p class="text-gray-600 mb-2">Enrolled Students: ${studentsInCourse.length}</p>
+                    <div class="space-y-2">
+                        <button onclick="viewStudents('${course.id}', '${course.name}')" class="btn bg-blue-600 hover:bg-blue-700 w-full">View Students</button>
+                    </div>
+                `;
+                coursesListEl.appendChild(courseItem);
+            });
+        }
+    }
+
+    function renderAdminDashboard() {
+        document.getElementById('dashboard-title').textContent = 'Admin Dashboard';
+        adminDashboard.classList.remove('hidden');
+
+        const studentsListEl = document.getElementById('admin-students-list');
+        studentsListEl.innerHTML = '';
+        data.users.filter(u => u.role === 'student').forEach(student => {
+            const studentItem = document.createElement('div');
+            studentItem.className = 'bg-gray-50 p-3 rounded-lg flex justify-between items-center';
+            studentItem.innerHTML = `
+                <p class="font-medium">${student.name} (${student.username})</p>
+                <div class="space-x-2">
+                    <button onclick="markAttendanceForStudent('${student.docId}')" class="btn bg-blue-500 hover:bg-blue-600 text-sm">Mark Attendance</button>
+                    <button onclick="updateCGPAForStudent('${student.docId}')" class="btn bg-green-500 hover:bg-green-600 text-sm">Update CGPA</button>
+                </div>
+            `;
+            studentsListEl.appendChild(studentItem);
+        });
+
+        const facultyListEl = document.getElementById('admin-faculty-list');
+        facultyListEl.innerHTML = '';
+        data.users.filter(u => u.role === 'faculty').forEach(faculty => {
+            const facultyItem = document.createElement('div');
+            facultyItem.className = 'bg-gray-50 p-3 rounded-lg';
+            facultyItem.innerHTML = `<p class="font-medium">${faculty.name} (${faculty.username})</p>`;
+            facultyListEl.appendChild(facultyItem);
+        });
+
+        const coursesListEl = document.getElementById('admin-courses-list');
+        coursesListEl.innerHTML = '';
+        data.courses.forEach(course => {
+            const faculty = data.users.find(u => u.docId === course.facultyId);
+            const courseItem = document.createElement('div');
+            courseItem.className = 'bg-gray-50 p-3 rounded-lg';
+            courseItem.innerHTML = `<p class="font-medium">${course.name} (${course.code}) - Taught by: ${faculty ? faculty.name : 'N/A'}</p>`;
+            coursesListEl.appendChild(courseItem);
+        });
+    }
+
+    // Faculty Actions
+    async function addCourse() {
+        const name = document.getElementById('course-name').value;
+        const code = document.getElementById('course-code').value;
+
+        if (name && code) {
+            try {
+                const coursesRef = collection(db, `artifacts/${appId}/public/data/courses`);
+                await addDoc(coursesRef, { name, code, facultyId: currentUser.docId });
+                messageEl.textContent = `Course "${name}" added successfully.`;
+                messageEl.classList.add('text-green-500');
+            } catch (e) {
+                console.error("Error adding course: ", e);
+                messageEl.textContent = 'Failed to add course.';
+                messageEl.classList.add('text-red-500');
+            }
+        } else {
+            messageEl.textContent = 'Please fill out all fields.';
+            messageEl.classList.add('text-red-500');
+        }
+    }
+
+    function viewStudents(courseId, courseName) {
+        const studentsInCourse = data.enrollments
+            .filter(e => e.courseId === courseId)
+            .map(e => data.users.find(u => u.docId === e.studentId));
+        
+        let studentsHtml = `<h3 class="text-xl font-semibold mb-4">Students in ${courseName}</h3>`;
+        if (studentsInCourse.length === 0) {
+            studentsHtml += '<p>No students enrolled yet.</p>';
+        } else {
+            studentsInCourse.forEach(student => {
+                studentsHtml += `<p class="p-2 bg-gray-100 rounded-lg">${student.name} (${student.username})</p>`;
+            });
+        }
+        
+        showModal('Enrolled Students', studentsHtml, () => {});
+    }
+
+    // Student Actions
+    function enrollCourse(courseId) {
+        showModal(
+            'Confirm Enrollment',
+            'Are you sure you want to enroll in this course?',
+            async () => {
+                try {
+                    const enrollmentsRef = collection(db, `artifacts/${appId}/public/data/enrollments`);
+                    const existingEnrollment = data.enrollments.find(e => e.studentId === currentUser.docId && e.courseId === courseId);
+
+                    if (existingEnrollment) {
+                        messageEl.textContent = 'You are already enrolled in this course.';
+                        messageEl.classList.add('text-red-500');
+                    } else {
+                        await addDoc(enrollmentsRef, { studentId: currentUser.docId, courseId });
+                        messageEl.textContent = 'Enrolled in the course successfully!';
+                        messageEl.classList.add('text-green-500');
+                    }
+                } catch (e) {
+                    console.error("Error enrolling in course: ", e);
+                    messageEl.textContent = 'Failed to enroll in course.';
+                    messageEl.classList.add('text-red-500');
+                }
+            }
+        );
+    }
+
+    // Admin Actions
+    function markAttendanceForStudent(studentDocId) {
+        const student = data.users.find(u => u.docId === studentDocId);
+        const enrolledCourses = data.enrollments
+            .filter(e => e.studentId === studentDocId)
+            .map(e => data.courses.find(c => c.id === e.courseId));
+        
+        let optionsHtml = `<label for="course-select" class="block mb-2">Select Course:</label>
+                           <select id="course-select" class="w-full mb-4 px-4 py-3 rounded-lg border border-gray-300">`;
+        enrolledCourses.forEach(course => {
+            optionsHtml += `<option value="${course.id}">${course.name} (${course.code})</option>`;
+        });
+        optionsHtml += `</select>`;
+
+        const statusSelect = `<label for="status-select" class="block mb-2">Attendance Status:</label>
+                              <select id="status-select" class="w-full mb-4 px-4 py-3 rounded-lg border border-gray-300">
+                                <option value="Present">Present</option>
+                                <option value="Absent">Absent</option>
+                              </select>`;
+
+        showModal(
+            `Mark Attendance for ${student.name}`,
+            `<div class="text-left">${optionsHtml}${statusSelect}</div>`,
+            async () => {
+                const courseId = document.getElementById('course-select').value;
+                const status = document.getElementById('status-select').value;
+                const date = new Date().toISOString().slice(0, 10);
+                try {
+                    const attendanceRef = collection(db, `artifacts/${appId}/public/data/attendance`);
+                    await addDoc(attendanceRef, { studentId: studentDocId, courseId, date, status });
+                    messageEl.textContent = `Attendance for ${student.name} marked as ${status}.`;
+                    messageEl.classList.add('text-green-500');
+                } catch (e) {
+                    console.error("Error marking attendance: ", e);
+                    messageEl.textContent = 'Failed to mark attendance.';
+                    messageEl.classList.add('text-red-500');
+                }
+            }
+        );
+    }
+
+    function updateCGPAForStudent(studentDocId) {
+        const student = data.users.find(u => u.docId === studentDocId);
+        
+        showModal(
+            `Update CGPA for ${student.name}`,
+            `<label for="cgpa-input" class="block mb-2 text-left">New CGPA (e.g., 8.5):</label>
+             <input type="number" id="cgpa-input" step="0.01" value="${student.cgpa}" class="w-full px-4 py-3 rounded-lg border border-gray-300">`,
+            async () => {
+                const newCgpa = parseFloat(document.getElementById('cgpa-input').value);
+                if (!isNaN(newCgpa)) {
+                    try {
+                        const userDocRef = doc(db, `artifacts/${appId}/public/data/users`, studentDocId);
+                        await updateDoc(userDocRef, { cgpa: newCgpa });
+                        messageEl.textContent = `CGPA for ${student.name} updated to ${newCgpa.toFixed(2)}.`;
+                        messageEl.classList.add('text-green-500');
+                    } catch (e) {
+                        console.error("Error updating CGPA: ", e);
+                        messageEl.textContent = 'Failed to update CGPA.';
+                        messageEl.classList.add('text-red-500');
+                    }
+                } else {
+                    messageEl.textContent = 'Invalid CGPA value.';
+                    messageEl.classList.add('text-red-500');
+                }
+            }
+        );
+    }
+
+    // Data Listeners
+    function setupDataListeners() {
+        const usersRef = collection(db, `artifacts/${appId}/public/data/users`);
+        onSnapshot(usersRef, (snapshot) => {
+            data.users = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
+            if (currentUser) {
+                currentUser = data.users.find(u => u.username === currentUser.username && u.role === currentUser.role);
+                if (!currentUser) {
+                    logout();
+                    return;
+                }
+                currentUser.docId = snapshot.docs.find(doc => doc.data().username === currentUser.username).id;
+            }
+            if (auth.currentUser && currentUser) renderDashboard();
+        });
+
+        const coursesRef = collection(db, `artifacts/${appId}/public/data/courses`);
+        onSnapshot(coursesRef, (snapshot) => {
+            data.courses = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            if (auth.currentUser && currentUser) renderDashboard();
+        });
+
+        const enrollmentsRef = collection(db, `artifacts/${appId}/public/data/enrollments`);
+        onSnapshot(enrollmentsRef, (snapshot) => {
+            data.enrollments = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            if (auth.currentUser && currentUser) renderDashboard();
+        });
+
+        const attendanceRef = collection(db, `artifacts/${appId}/public/data/attendance`);
+        onSnapshot(attendanceRef, (snapshot) => {
+            data.attendance = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            if (auth.currentUser && currentUser) renderDashboard();
+        });
+    }
+
+    // Initial app setup using an IIFE to prevent redeclaration errors
+    (async () => {
+        loadingEl.classList.remove('hidden');
+        authPage.classList.add('hidden');
+        dashboard.classList.add('hidden');
+
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            await setPersistence(auth, browserSessionPersistence);
+            
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    userId = user.uid;
+                    // Check if the user exists in our 'users' collection
+                    const q = query(collection(db, `artifacts/${appId}/public/data/users`), where("uid", "==", user.uid));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        currentUser = { ...querySnapshot.docs[0].data(), docId: querySnapshot.docs[0].id };
+                        renderDashboard();
+                    } else {
+                        // This case is for initial anonymous sign-in, not for our app logic
+                        // We will rely on manual login/signup for user management
+                        renderAuthPage();
+                    }
+                } else {
+                    try {
+                        if (initialAuthToken) {
+                            await signInWithCustomToken(auth, initialAuthToken);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) {
+                        console.error("Authentication error: ", e);
+                        renderAuthPage();
+                    }
+                }
+            });
+            setupDataListeners();
+        } catch (e) {
+            console.error("Firebase initialization failed: ", e);
+            messageEl.textContent = 'App initialization failed. Check console for details.';
+            messageEl.classList.remove('text-green-500');
+            messageEl.classList.add('text-red-500');
+            loadingEl.classList.add('hidden');
+            authPage.classList.remove('hidden');
+        }
+    })();
+
+    window.login = login;
+    window.signup = signup;
+    window.logout = logout;
+    window.showLogin = showLogin;
+    window.showSignup = showSignup;
+    window.addCourse = addCourse;
+    window.enrollCourse = enrollCourse;
+    window.viewStudents = viewStudents;
+    window.markAttendanceForStudent = markAttendanceForStudent;
+    window.updateCGPAForStudent = updateCGPAForStudent;
+
+</script>
+
+</body>
+</html>
