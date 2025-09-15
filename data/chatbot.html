@@ -1,0 +1,164 @@
+// Main application entry point and configuration
+@SpringBootApplication
+public class HealthcareChatbotApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(HealthcareChatbotApplication.class, args);
+    }
+}
+
+// REST API for the frontend to interact with
+@RestController
+@RequestMapping("/api/chatbot")
+public class ChatbotController {
+
+    private final ChatbotService chatbotService;
+
+    // Dependency Injection for the service layer
+    @Autowired
+    public ChatbotController(ChatbotService chatbotService) {
+        this.chatbotService = chatbotService;
+    }
+
+    // Endpoint for user messages
+    @PostMapping("/message")
+    public ResponseEntity<ChatResponse> sendMessage(@RequestBody ChatRequest request) {
+        ChatResponse response = chatbotService.processMessage(request.getMessage());
+        return ResponseEntity.ok(response);
+    }
+
+    // Endpoint for professional referrals
+    @PostMapping("/referral")
+    public ResponseEntity<ReferralResponse> getReferral(@RequestBody ReferralRequest request) {
+        ReferralResponse response = chatbotService.getProfessionalReferral(request);
+        return ResponseEntity.ok(response);
+    }
+}
+
+// Service layer to handle business logic
+@Service
+public class ChatbotService {
+
+    private final NLPProcessor nlpProcessor;
+    private final KnowledgeBase knowledgeBase;
+    private final ReferralService referralService;
+
+    @Autowired
+    public ChatbotService(NLPProcessor nlpProcessor, KnowledgeBase knowledgeBase, ReferralService referralService) {
+        this.nlpProcessor = nlpProcessor;
+        this.knowledgeBase = knowledgeBase;
+        this.referralService = referralService;
+    }
+
+    // Main method to process user input
+    public ChatResponse processMessage(String userMessage) {
+        // Step 1: Analyze user intent using NLP
+        String intent = nlpProcessor.determineIntent(userMessage);
+
+        // Step 2: Generate a response based on the intent
+        String responseText;
+        if (intent.equals("symptom_check")) {
+            responseText = knowledgeBase.findSymptomInfo(userMessage);
+        } else if (intent.equals("preventive_tips")) {
+            responseText = knowledgeBase.getPreventiveTips();
+        } else {
+            responseText = "I'm sorry, I don't understand that. Can you please rephrase?";
+        }
+
+        // Return the response object
+        return new ChatResponse(responseText);
+    }
+
+    public ReferralResponse getProfessionalReferral(ReferralRequest request) {
+        // Logic to find and format professional referrals
+        return referralService.findAndFormatReferral(request);
+    }
+}
+
+// Models to represent data
+class ChatRequest {
+    private String message;
+    // Getters and Setters
+}
+
+class ChatResponse {
+    private String message;
+    // Getters and Setters
+}
+
+class ReferralRequest {
+    // fields like symptom, location, etc.
+}
+
+class ReferralResponse {
+    // fields like doctor name, specialty, contact info
+}
+Frontend Development (Conceptual)
+The images show a simple UI design. A professional Android or iOS app would be built with Kotlin or Swift, respectively. For a cross-platform solution, frameworks like React Native or Flutter would be ideal.
+
+Key UI Components:
+Chat screen: A RecyclerView or ListView to display chat messages. Each message would be a custom ViewHolder to handle sender (user vs. bot) and message type (text, image, button).
+
+Input field: An EditText for the user to type their message and a button to send it.
+
+Navigation: Buttons or a bottom navigation bar to switch between different sections of the app (e.g., chat, health tips, profile).
+
+Since you specifically mentioned Java, here's a brief example of an Android UI component that would be used in the frontend. This would connect to the backend API using a library like Retrofit.
+
+Java
+
+// Example of an Android Activity to display the chat interface
+public class ChatActivity extends AppCompatActivity {
+
+    private RecyclerView messageRecyclerView;
+    private ChatMessageAdapter adapter;
+    private List<ChatMessage> messageList;
+    private EditText messageEditText;
+    private Button sendButton;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_chat);
+
+        messageRecyclerView = findViewById(R.id.messages_recycler_view);
+        messageEditText = findViewById(R.id.message_edit_text);
+        sendButton = findViewById(R.id.send_button);
+
+        messageList = new ArrayList<>();
+        adapter = new ChatMessageAdapter(messageList);
+        messageRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        messageRecyclerView.setAdapter(adapter);
+
+        // Set up the send button listener
+        sendButton.setOnClickListener(v -> {
+            String userMessage = messageEditText.getText().toString();
+            if (!userMessage.trim().isEmpty()) {
+                // Add the user message to the list and update the UI
+                messageList.add(new ChatMessage(userMessage, ChatMessage.SENDER_USER));
+                adapter.notifyItemInserted(messageList.size() - 1);
+                messageEditText.setText("");
+                messageRecyclerView.scrollToPosition(messageList.size() - 1);
+
+                // Call the API to get a response
+                sendMessageToApi(userMessage);
+            }
+        });
+    }
+
+    private void sendMessageToApi(String message) {
+        // This is a placeholder for the actual API call using Retrofit
+        // It would send the message to the backend and handle the response
+        // On success, it would add the bot's response to the list and update the UI
+    }
+}
+
+
+
+
+
+
+
+
+Gemini can make mistakes, so double-check it
+
+
